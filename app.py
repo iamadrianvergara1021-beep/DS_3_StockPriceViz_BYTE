@@ -139,7 +139,7 @@ plt.rcParams.update({
 # ---------------------------------------------------------------------------
 # Header
 # ---------------------------------------------------------------------------
-st.markdown('<div class="dash-title">📈 Stock Price & Volume Anomaly Terminal</div>', unsafe_allow_html=True)
+st.markdown('<div class="dash-title"> Stock Price & Volume Anomaly Terminal</div>', unsafe_allow_html=True)
 st.markdown(
     '<div class="dash-subtitle">'
     '<span class="pill">LIVE MARKET DATA</span>'
