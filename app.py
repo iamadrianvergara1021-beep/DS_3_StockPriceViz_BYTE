@@ -12,17 +12,18 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------------------------
-# Theme
+# Theme — refined slate / gold finance palette
 # ---------------------------------------------------------------------------
-ACCENT = "#4f8cff"
-ACCENT_SOFT = "#9db8ff"
-GOOD = "#2ecc9c"
-BAD = "#ff5d73"
-BG = "#0d1117"
-CARD = "#141a24"
-BORDER = "#232b38"
-TEXT_MAIN = "#e8ecf1"
-TEXT_MUTED = "#8a94a6"
+ACCENT = "#3b82f6"       # primary line color
+ACCENT_SOFT = "#93c5fd"
+GOLD = "#eab308"         # highlight / secondary series
+GOOD = "#22c55e"
+BAD = "#ef4444"
+BG = "#0b0f14"
+CARD = "#11161d"
+BORDER = "#1f2733"
+TEXT_MAIN = "#f1f5f9"
+TEXT_MUTED = "#8b98a9"
 
 st.markdown(
     f"""
@@ -34,33 +35,43 @@ st.markdown(
     }}
 
     .block-container {{
-        padding-top: 2.2rem;
+        padding-top: 2rem;
         padding-bottom: 3rem;
         max-width: 1400px;
     }}
 
     /* Header */
+    .dash-eyebrow {{
+        color: {ACCENT_SOFT};
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.35rem;
+    }}
     .dash-title {{
-        font-size: 2.1rem;
+        font-size: 2.05rem;
         font-weight: 700;
         letter-spacing: -0.03em;
         color: {TEXT_MAIN};
-        margin-bottom: 0.15rem;
+        margin-bottom: 0.5rem;
     }}
     .dash-subtitle {{
         color: {TEXT_MUTED};
         font-size: 0.92rem;
         font-weight: 500;
-        margin-bottom: 1.6rem;
+        margin-bottom: 1.8rem;
+        border-bottom: 1px solid {BORDER};
+        padding-bottom: 1.4rem;
     }}
     .pill {{
         display: inline-block;
-        background: rgba(79, 140, 255, 0.12);
+        background: rgba(59, 130, 246, 0.10);
         color: {ACCENT_SOFT};
-        border: 1px solid rgba(79, 140, 255, 0.35);
+        border: 1px solid rgba(59, 130, 246, 0.30);
         border-radius: 999px;
-        padding: 2px 11px;
-        font-size: 0.75rem;
+        padding: 3px 12px;
+        font-size: 0.74rem;
         font-weight: 600;
         margin-right: 6px;
     }}
@@ -70,15 +81,15 @@ st.markdown(
         background: {CARD};
         border: 1px solid {BORDER};
         padding: 18px 20px 14px 20px;
-        border-radius: 14px;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.28);
+        border-radius: 12px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.25);
     }}
     div[data-testid="stMetricLabel"] {{
         color: {TEXT_MUTED} !important;
         font-weight: 600 !important;
-        font-size: 0.78rem !important;
+        font-size: 0.76rem !important;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.05em;
     }}
     div[data-testid="stMetricValue"] {{
         color: {TEXT_MAIN} !important;
@@ -86,13 +97,29 @@ st.markdown(
     }}
 
     /* Section headers */
+    .section-label {{
+        color: {TEXT_MUTED};
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 0.1rem;
+    }}
     h3 {{
         color: {TEXT_MAIN} !important;
         font-weight: 650 !important;
         letter-spacing: -0.01em;
-        border-left: 3px solid {ACCENT};
-        padding-left: 10px;
-        margin-top: 1.6rem !important;
+        font-size: 1.15rem !important;
+        margin-top: 0.1rem !important;
+        margin-bottom: 0.8rem !important;
+    }}
+
+    /* Chart containers */
+    div[data-testid="stVerticalBlockBorderWrapper"] {{
+        border: 1px solid {BORDER};
+        border-radius: 14px;
+        padding: 1.1rem 1.3rem 0.6rem 1.3rem;
+        background: {CARD};
     }}
 
     /* Sidebar */
@@ -101,9 +128,7 @@ st.markdown(
         border-right: 1px solid {BORDER};
     }}
     section[data-testid="stSidebar"] h3 {{
-        border-left: none;
-        padding-left: 0;
-        font-size: 0.85rem;
+        font-size: 0.82rem !important;
         text-transform: uppercase;
         letter-spacing: 0.06em;
         color: {TEXT_MUTED} !important;
@@ -123,7 +148,7 @@ st.markdown(
 )
 
 plt.rcParams.update({
-    "figure.facecolor": BG,
+    "figure.facecolor": CARD,
     "axes.facecolor": CARD,
     "axes.edgecolor": BORDER,
     "axes.labelcolor": TEXT_MAIN,
@@ -139,7 +164,8 @@ plt.rcParams.update({
 # ---------------------------------------------------------------------------
 # Header
 # ---------------------------------------------------------------------------
-st.markdown('<div class="dash-title"> Stock Price & Volume Anomaly Terminal</div>', unsafe_allow_html=True)
+st.markdown('<div class="dash-eyebrow">Market Intelligence</div>', unsafe_allow_html=True)
+st.markdown('<div class="dash-title">Stock Price & Volume Anomaly Terminal</div>', unsafe_allow_html=True)
 st.markdown(
     '<div class="dash-subtitle">'
     '<span class="pill">LIVE MARKET DATA</span>'
@@ -167,7 +193,7 @@ vol_spike_threshold = st.sidebar.slider("Volume Spike Threshold (% Above Avg)", 
 
 
 # ---------------------------------------------------------------------------
-# Real data fetch (replaces the old random-seed generator)
+# Real data fetch
 # ---------------------------------------------------------------------------
 @st.cache_data(show_spinner="Fetching live market data...")
 def load_data(ticker_sym, start_dt, end_dt, short_w, long_w, vol_thresh):
@@ -197,75 +223,88 @@ if df.empty:
 else:
     anomalies = df[df["Is_Volume_Anomaly"]]
 
-    c1, c2, c3, c4, c5 = st.columns(5)
+    c1, c2, c3, c4, c5 = st.columns(5, gap="medium")
     c1.metric("Selected Asset", ticker)
     c2.metric("Latest Close", f"${df['Close'].iloc[-1]:.2f}")
     c3.metric(f"{sma_short}-Day SMA", f"${df[f'SMA_{sma_short}'].iloc[-1]:.2f}")
     c4.metric(f"{sma_long}-Day SMA", f"${df[f'SMA_{sma_long}'].iloc[-1]:.2f}")
     c5.metric(f"Volume Anomalies (>={vol_spike_threshold}%)", f"{len(anomalies)} Days")
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 1.8rem'></div>", unsafe_allow_html=True)
 
-    st.markdown(f"### Price Trajectory & Moving Average Crossovers ({sma_short}D vs {sma_long}D)")
-    fig_price, ax_price = plt.subplots(figsize=(14, 4.2))
-    ax_price.plot(df["Date"], df["Close"], color=ACCENT, linewidth=1.8, label="Close Price ($)", alpha=0.95)
-    ax_price.plot(df["Date"], df[f"SMA_{sma_short}"], color="#f0883e", linewidth=1.6, linestyle="--", label=f"{sma_short}-Day SMA")
-    ax_price.plot(df["Date"], df[f"SMA_{sma_long}"], color=GOOD, linewidth=1.6, linestyle="-.", label=f"{sma_long}-Day SMA")
-    ax_price.scatter(anomalies["Date"], anomalies["Close"], color=BAD, s=70, zorder=5,
-                      edgecolors="white", linewidth=0.7, label=f"Volume Spike (>={vol_spike_threshold}%)")
-    ax_price.set_ylabel("Price (USD)")
-    ax_price.grid(True)
-    ax_price.spines["top"].set_visible(False)
-    ax_price.spines["right"].set_visible(False)
-    ax_price.legend(frameon=True, facecolor=CARD, edgecolor=BORDER, loc="upper left")
-    plt.tight_layout()
-    st.pyplot(fig_price)
+    # --- Full-width price chart, in its own bordered card -------------------
+    with st.container(border=True):
+        st.markdown('<div class="section-label">01 &nbsp;·&nbsp; Price Action</div>', unsafe_allow_html=True)
+        st.markdown(f"### Price Trajectory & Moving Average Crossovers ({sma_short}D vs {sma_long}D)")
+        fig_price, ax_price = plt.subplots(figsize=(14, 4.0))
+        ax_price.plot(df["Date"], df["Close"], color=ACCENT, linewidth=1.8, label="Close Price ($)", alpha=0.95)
+        ax_price.plot(df["Date"], df[f"SMA_{sma_short}"], color=GOLD, linewidth=1.6, linestyle="--", label=f"{sma_short}-Day SMA")
+        ax_price.plot(df["Date"], df[f"SMA_{sma_long}"], color=GOOD, linewidth=1.6, linestyle="-.", label=f"{sma_long}-Day SMA")
+        ax_price.scatter(anomalies["Date"], anomalies["Close"], color=BAD, s=65, zorder=5,
+                          edgecolors="white", linewidth=0.7, label=f"Volume Spike (>={vol_spike_threshold}%)")
+        ax_price.set_ylabel("Price (USD)")
+        ax_price.grid(True)
+        ax_price.spines["top"].set_visible(False)
+        ax_price.spines["right"].set_visible(False)
+        ax_price.legend(frameon=True, facecolor=CARD, edgecolor=BORDER, loc="upper left")
+        plt.tight_layout()
+        st.pyplot(fig_price)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    col_left, col_right = st.columns(2)
+    st.markdown("<div style='height: 1.6rem'></div>", unsafe_allow_html=True)
+
+    # --- Two side-by-side chart cards, matched heights ----------------------
+    col_left, col_right = st.columns(2, gap="medium")
 
     with col_left:
-        st.markdown(f"### Trading Volume Spike Detection (>={vol_spike_threshold}% Above Avg)")
-        fig1, ax1 = plt.subplots(figsize=(7, 4.0))
-        bar_colors = [BAD if a else BORDER for a in df["Is_Volume_Anomaly"]]
-        ax1.bar(df["Date"], df["Volume"] / 1e6, color=bar_colors, width=1.6)
-        avg_v = df["Avg_Volume"].iloc[0] / 1e6
-        thresh_v = avg_v * (1 + vol_spike_threshold / 100.0)
-        ax1.axhline(avg_v, color=ACCENT, linewidth=1.4, label=f"Baseline Avg ({avg_v:.1f}M)")
-        ax1.axhline(thresh_v, color=BAD, linestyle="--", linewidth=1.4, label=f"+{vol_spike_threshold}% Spike Threshold")
-        ax1.set_ylabel("Volume (Millions)")
-        ax1.set_xlabel("Date")
-        ax1.grid(True)
-        ax1.spines["top"].set_visible(False)
-        ax1.spines["right"].set_visible(False)
-        ax1.legend(frameon=True, facecolor=CARD, edgecolor=BORDER, loc="upper left")
-        plt.tight_layout()
-        st.pyplot(fig1)
+        with st.container(border=True):
+            st.markdown('<div class="section-label">02 &nbsp;·&nbsp; Anomaly Detection</div>', unsafe_allow_html=True)
+            st.markdown(f"### Volume Spike Detection (>={vol_spike_threshold}% Above Avg)")
+            fig1, ax1 = plt.subplots(figsize=(7, 4.2))
+            bar_colors = [BAD if a else BORDER for a in df["Is_Volume_Anomaly"]]
+            ax1.bar(df["Date"], df["Volume"] / 1e6, color=bar_colors, width=1.6)
+            avg_v = df["Avg_Volume"].iloc[0] / 1e6
+            thresh_v = avg_v * (1 + vol_spike_threshold / 100.0)
+            ax1.axhline(avg_v, color=ACCENT, linewidth=1.4, label=f"Baseline Avg ({avg_v:.1f}M)")
+            ax1.axhline(thresh_v, color=BAD, linestyle="--", linewidth=1.4, label=f"+{vol_spike_threshold}% Threshold")
+            ax1.set_ylabel("Volume (Millions)")
+            ax1.set_xlabel("Date")
+            ax1.grid(True)
+            ax1.spines["top"].set_visible(False)
+            ax1.spines["right"].set_visible(False)
+            ax1.legend(frameon=True, facecolor=CARD, edgecolor=BORDER, loc="upper left", fontsize=8)
+            plt.tight_layout()
+            st.pyplot(fig1)
 
     with col_right:
-        st.markdown("### Daily Percentage Returns Distribution")
-        fig2, ax2 = plt.subplots(figsize=(7, 4.0))
-        sns.histplot(df["Daily_Return_Pct"], bins=28, kde=True, color=ACCENT,
-                     edgecolor=CARD, alpha=0.8, ax=ax2)
-        ax2.axvline(df["Daily_Return_Pct"].mean(), color=BAD, linestyle="--", linewidth=1.5,
-                    label=f"Mean Return ({df['Daily_Return_Pct'].mean():.2f}%)")
-        ax2.set_xlabel("Daily Return (%)")
-        ax2.set_ylabel("Frequency (Trading Days)")
-        ax2.grid(True)
-        ax2.spines["top"].set_visible(False)
-        ax2.spines["right"].set_visible(False)
-        ax2.legend(frameon=True, facecolor=CARD, edgecolor=BORDER, loc="upper right")
-        plt.tight_layout()
-        st.pyplot(fig2)
+        with st.container(border=True):
+            st.markdown('<div class="section-label">03 &nbsp;·&nbsp; Return Profile</div>', unsafe_allow_html=True)
+            st.markdown("### Daily Percentage Returns Distribution")
+            fig2, ax2 = plt.subplots(figsize=(7, 4.2))
+            sns.histplot(df["Daily_Return_Pct"], bins=28, kde=True, color=ACCENT,
+                         edgecolor=CARD, alpha=0.85, ax=ax2)
+            ax2.axvline(df["Daily_Return_Pct"].mean(), color=GOLD, linestyle="--", linewidth=1.5,
+                        label=f"Mean Return ({df['Daily_Return_Pct'].mean():.2f}%)")
+            ax2.set_xlabel("Daily Return (%)")
+            ax2.set_ylabel("Frequency (Trading Days)")
+            ax2.grid(True)
+            ax2.spines["top"].set_visible(False)
+            ax2.spines["right"].set_visible(False)
+            ax2.legend(frameon=True, facecolor=CARD, edgecolor=BORDER, loc="upper right", fontsize=8)
+            plt.tight_layout()
+            st.pyplot(fig2)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown(f"### Flagged Volume Anomalies (Volume Spiked >= {vol_spike_threshold}% Above Average)")
-    display_df = anomalies[["Date", "Close", "Volume", "Avg_Volume", "Volume_Spike_Pct", "Daily_Return_Pct"]].copy()
-    display_df["Date"] = pd.to_datetime(display_df["Date"]).dt.strftime("%Y-%m-%d")
-    st.dataframe(display_df.reset_index(drop=True), use_container_width=True)
+    st.markdown("<div style='height: 1.6rem'></div>", unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    with st.expander("📝 Interpretation (for README / notebook)"):
+    with st.container(border=True):
+        st.markdown('<div class="section-label">04 &nbsp;·&nbsp; Flagged Days</div>', unsafe_allow_html=True)
+        st.markdown(f"### Flagged Volume Anomalies (Volume Spiked >= {vol_spike_threshold}% Above Average)")
+        display_df = anomalies[["Date", "Close", "Volume", "Avg_Volume", "Volume_Spike_Pct", "Daily_Return_Pct"]].copy()
+        display_df["Date"] = pd.to_datetime(display_df["Date"]).dt.strftime("%Y-%m-%d")
+        st.dataframe(display_df.reset_index(drop=True), use_container_width=True)
+
+    st.markdown("<div style='height: 1.2rem'></div>", unsafe_allow_html=True)
+
+    with st.expander("Interpretation (for README / notebook)"):
         vol = df["Daily_Return_Pct"].std()
         trend = "an uptrend" if df["Close"].iloc[-1] > df["Close"].iloc[0] else "a downtrend"
         st.write(
