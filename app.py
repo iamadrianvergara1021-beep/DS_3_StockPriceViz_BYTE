@@ -6,30 +6,53 @@ import streamlit as st
 
 st.set_page_config(
     page_title="Stock Price & Volume Anomaly Detector",
-    page_icon="📈",
     layout="wide",
-)
-sns.set_theme(style="darkgrid")
-
-st.title("📈 Stock Price Visualization & 500% Volume Anomaly Detector")
-st.write(
-    "Interactive time-series analysis featuring **20-Day & 50-Day Moving"
-    " Averages**, **Daily Returns Histogram**, and **Trading Volume Spike"
-    " Detection (>500% Above Average)**."
+    initial_sidebar_state="expanded",
 )
 
-st.sidebar.header("1. Ticker & Date Range")
+st.markdown(
+    """
+    <style>
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+    div[data-testid="stMetric"] {
+        background-color: #161b22;
+        border: 1px solid #30363d;
+        padding: 16px 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    }
+    h1, h2, h3 {
+        font-family: 'Inter', sans-serif;
+        letter-spacing: -0.5px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.title("Market Price & Volume Anomaly Terminal")
+st.caption(
+    " Quantitative Time-Series Analysis  |  Dual Moving Average Crossovers  | "
+    " 500% Volume Spike Detection  |  Return Distribution"
+)
+st.divider()
+
+st.sidebar.subheader("Asset & Horizon")
 ticker = st.sidebar.selectbox(
-    "Select Stock Ticker", ["AAPL", "NVDA", "TSLA", "MSFT", "AMZN"], index=0
+    "Ticker Symbol", ["AAPL", "NVDA", "TSLA", "MSFT", "AMZN"], index=0
 )
 start_date = st.sidebar.date_input("Start Date", pd.to_datetime("2025-01-01"))
 end_date = st.sidebar.date_input("End Date", pd.to_datetime("2025-12-31"))
 
-st.sidebar.header("2. Moving Average & Anomaly Controls")
+st.sidebar.divider()
+st.sidebar.subheader("Model Parameters")
 sma_short = st.sidebar.slider("Short Moving Average (Days)", 5, 40, 20)
 sma_long = st.sidebar.slider("Long Moving Average (Days)", 30, 100, 50)
 vol_spike_threshold = st.sidebar.slider(
-    "Volume Spike Threshold (% Above Average)", 100, 800, 500, 50
+    "Volume Spike Threshold (% Above Avg)", 100, 800, 500, 50
 )
 
 
@@ -93,85 +116,163 @@ else:
   anomalies = df[df["Is_Volume_Anomaly"]]
 
   c1, c2, c3, c4, c5 = st.columns(5)
-  c1.metric("Ticker", ticker)
+  c1.metric("Selected Asset", ticker)
   c2.metric("Latest Close", f"${df['Close'].iloc[-1]:.2f}")
   c3.metric(f"{sma_short}-Day SMA", f"${df[f'SMA_{sma_short}'].iloc[-1]:.2f}")
   c4.metric(f"{sma_long}-Day SMA", f"${df[f'SMA_{sma_long}'].iloc[-1]:.2f}")
   c5.metric(
-      f"Volume Spikes (>={vol_spike_threshold}%)", f"{len(anomalies)} Days"
+      f"Volume Anomalies (>={vol_spike_threshold}%)", f"{len(anomalies)} Days"
   )
+
+  st.markdown("<br>", unsafe_allow_html=True)
+
+  plt.rcParams.update({
+      "figure.facecolor": "#0e1117",
+      "axes.facecolor": "#161b22",
+      "axes.edgecolor": "#30363d",
+      "axes.labelcolor": "#c9d1d9",
+      "text.color": "#f0f6fc",
+      "xtick.color": "#8b949e",
+      "ytick.color": "#8b949e",
+      "grid.color": "#21262d",
+      "grid.linestyle": "--",
+      "grid.alpha": 0.7,
+  })
 
   st.subheader(
-      f"1. {ticker} Price Trend with {sma_short}-Day & {sma_long}-Day Moving"
-      " Averages"
+      f"Price Trajectory & Moving Average Crossovers ({sma_short}D vs"
+      f" {sma_long}D)"
   )
-  chart_cols = ["Close", f"SMA_{sma_short}", f"SMA_{sma_long}"]
-  st.line_chart(df.set_index("Date")[chart_cols], height=320)
+  fig_price, ax_price = plt.subplots(figsize=(14, 4.2))
+  ax_price.plot(
+      df["Date"],
+      df["Close"],
+      color="#58a6ff",
+      linewidth=1.8,
+      label="Close Price ($)",
+      alpha=0.9,
+  )
+  ax_price.plot(
+      df["Date"],
+      df[f"SMA_{sma_short}"],
+      color="#f0883e",
+      linewidth=1.8,
+      linestyle="--",
+      label=f"{sma_short}-Day SMA",
+  )
+  ax_price.plot(
+      df["Date"],
+      df[f"SMA_{sma_long}"],
+      color="#3fb950",
+      linewidth=1.8,
+      linestyle="-.",
+      label=f"{sma_long}-Day SMA",
+  )
+  ax_price.scatter(
+      anomalies["Date"],
+      anomalies["Close"],
+      color="#f85149",
+      s=75,
+      zorder=5,
+      edgecolors="#ffffff",
+      linewidth=0.8,
+      label=f"Volume Spike (>={vol_spike_threshold}%)",
+  )
+  ax_price.set_ylabel("Price (USD)")
+  ax_price.grid(True)
+  ax_price.spines["top"].set_visible(False)
+  ax_price.spines["right"].set_visible(False)
+  ax_price.legend(
+      frameon=True, facecolor="#161b22", edgecolor="#30363d", loc="upper left"
+  )
+  plt.tight_layout()
+  st.pyplot(fig_price)
 
+  st.markdown("<br>", unsafe_allow_html=True)
   col_left, col_right = st.columns(2)
 
   with col_left:
     st.subheader(
-        f"2. Volume Anomaly Detector (>={vol_spike_threshold}% Above Avg)"
+        f"Trading Volume Spike Detection (>={vol_spike_threshold}% Above Avg)"
     )
-    fig1, ax1 = plt.subplots(figsize=(7, 3.8))
+    fig1, ax1 = plt.subplots(figsize=(7, 4.0))
     bar_colors = [
-        "#ef4444" if anom else "#64748b" for anom in df["Is_Volume_Anomaly"]
+        "#f85149" if anom else "#30363d" for anom in df["Is_Volume_Anomaly"]
     ]
-    ax1.bar(df["Date"], df["Volume"] / 1e6, color=bar_colors, width=1.6)
+    ax1.bar(df["Date"], df["Volume"] / 1e6, color=bar_colors, width=1.8)
     avg_v = df["Avg_Volume"].iloc[0] / 1e6
     thresh_v = avg_v * (1 + vol_spike_threshold / 100.0)
     ax1.axhline(
         avg_v,
-        color="#3b82f6",
+        color="#58a6ff",
         linestyle="-",
-        linewidth=1.5,
-        label=f"Avg Volume ({avg_v:.1f}M)",
+        linewidth=1.4,
+        label=f"Baseline Avg ({avg_v:.1f}M)",
     )
     ax1.axhline(
         thresh_v,
-        color="#ef4444",
+        color="#f85149",
         linestyle="--",
-        linewidth=1.5,
+        linewidth=1.4,
         label=f"+{vol_spike_threshold}% Spike Threshold",
     )
     ax1.set_ylabel("Volume (Millions)")
     ax1.set_xlabel("Date")
-    ax1.legend(loc="upper left")
+    ax1.grid(True)
+    ax1.spines["top"].set_visible(False)
+    ax1.spines["right"].set_visible(False)
+    ax1.legend(
+        frameon=True, facecolor="#161b22", edgecolor="#30363d", loc="upper left"
+    )
     plt.tight_layout()
     st.pyplot(fig1)
 
   with col_right:
-    st.subheader("3. Distribution of Daily Returns (Histogram)")
-    fig2, ax2 = plt.subplots(figsize=(7, 3.8))
+    st.subheader("Daily Percentage Returns Distribution")
+    fig2, ax2 = plt.subplots(figsize=(7, 4.0))
     sns.histplot(
-        df["Daily_Return_Pct"], bins=30, kde=True, color="#3b82f6", ax=ax2
+        df["Daily_Return_Pct"],
+        bins=28,
+        kde=True,
+        color="#58a6ff",
+        edgecolor="#161b22",
+        alpha=0.75,
+        ax=ax2,
     )
     ax2.axvline(
         df["Daily_Return_Pct"].mean(),
-        color="#ef4444",
+        color="#f85149",
         linestyle="--",
-        label="Mean Return",
+        linewidth=1.5,
+        label=f"Mean Return ({df['Daily_Return_Pct'].mean():.2f}%)",
     )
     ax2.set_xlabel("Daily Return (%)")
-    ax2.set_ylabel("Frequency (Days)")
-    ax2.legend()
+    ax2.set_ylabel("Frequency (Trading Days)")
+    ax2.grid(True)
+    ax2.spines["top"].set_visible(False)
+    ax2.spines["right"].set_visible(False)
+    ax2.legend(
+        frameon=True,
+        facecolor="#161b22",
+        edgecolor="#30363d",
+        loc="upper right",
+    )
     plt.tight_layout()
     st.pyplot(fig2)
 
+  st.markdown("<br>", unsafe_allow_html=True)
   st.subheader(
-      f"4. Flagged Trading Volume Anomalies (Volume Spiked >="
+      "Flagged Institutional Volume Anomalies (Volume Spiked >="
       f" {vol_spike_threshold}% Above Average)"
   )
-  st.dataframe(
-      anomalies[[
-          "Date",
-          "Ticker",
-          "Close",
-          "Volume",
-          "Avg_Volume",
-          "Volume_Spike_Pct",
-          "Daily_Return_Pct",
-      ]].reset_index(drop=True),
-      use_container_width=True,
-  )
+  display_df = anomalies[[
+      "Date",
+      "Ticker",
+      "Close",
+      "Volume",
+      "Avg_Volume",
+      "Volume_Spike_Pct",
+      "Daily_Return_Pct",
+  ]].copy()
+  display_df["Date"] = display_df["Date"].dt.strftime("%Y-%m-%d")
+  st.dataframe(display_df.reset_index(drop=True), use_container_width=True)
