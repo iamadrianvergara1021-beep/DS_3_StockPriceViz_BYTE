@@ -181,7 +181,7 @@ st.markdown(
 # Sidebar controls
 # ---------------------------------------------------------------------------
 st.sidebar.markdown("### Asset & Horizon")
-ticker = st.sidebar.selectbox("Ticker Symbol", ["AAPL", "NVDA", "TSLA", "MSFT", "AMZN"], index=0)
+ticker = st.sidebar.selectbox("Ticker Symbol", ["GME", "SMCI", "AAPL", "NVDA", "TSLA", "MSFT", "AMZN"], index=0)
 start_date = st.sidebar.date_input("Start Date", pd.to_datetime("2024-01-01"))
 end_date = st.sidebar.date_input("End Date", pd.to_datetime("2024-12-31"))
 
